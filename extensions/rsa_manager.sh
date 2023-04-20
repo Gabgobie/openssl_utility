@@ -35,7 +35,7 @@ make_subdirectories () {
 
 create_Root_CA () {
 
-    type="Root_CA"
+    local type="Root_CA"
 
     if [ ! -d ${TLD}_${algorithm}/${TLD}_${type} ]; then
         echo "Creating directory for your ${type}"
@@ -64,20 +64,20 @@ create_Root_CA () {
         openssl x509 -in ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}.cert.pem -text -noout
     fi
 
-    # cleanup
-    unset type input exported_CN
-
     # export to known certs file
     echo "${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}.cert.pem" >> values/known_Certs.txt
 
     # confirmation
     echo "Creation of ${type} complete."
+
+    # cleanup
+    unset type input exported_CN
 }
 
 create_Interoot_CA () {
 
-    requirement="Root_CA"
-    type="Interoot_CA"
+    local requirement="Root_CA"
+    local type="Interoot_CA"
 
     if [ ! -d ${TLD}_${algorithm}/${TLD}_${type} ]; then
         echo "Creating directory for your ${type}"
@@ -88,8 +88,6 @@ create_Interoot_CA () {
             eval "create_${requirement}"
         fi
 
-        requirement="Root_CA"
-        type="Interoot_CA"
         echo "Now commencing the creation of your ${type}"
     fi
 
@@ -113,17 +111,17 @@ create_Interoot_CA () {
         openssl x509 -in ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}.cert.pem -text -noout
     fi
 
-    # cleanup
-    unset type requirement input exported_CN
-
     # confirmation
     echo "Creation of ${type} complete."
+
+    # cleanup
+    unset type requirement input exported_CN
 }
 
 create_Intermediate_CA () {
 
-    requirement="Interoot_CA"
-    type="Intermediate_CA"
+    local requirement="Interoot_CA"
+    local type="Intermediate_CA"
 
     if [ ! -d ${TLD}_${algorithm}/${TLD}_${type} ]; then
         echo "Creating directory for your ${type}"
@@ -136,8 +134,6 @@ create_Intermediate_CA () {
             eval "create_${requirement}"
         fi
 
-        requirement="Interoot_CA"
-        type="Intermediate_CA"
         echo "Now commencing the creation of your ${type}"
     fi
 
@@ -161,11 +157,11 @@ create_Intermediate_CA () {
         openssl x509 -in ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}.cert.pem -text -noout
     fi
 
-    # cleanup
-    unset type requirement input exported_CN
-
     # confirmation
     echo "Creation of ${type} complete."
+
+    # cleanup
+    unset type requirement input exported_CN
 }
 
 
@@ -175,8 +171,8 @@ create_Intermediate_CA () {
 
 create_server_cert () {
 
-    requirement="Intermediate_CA"
-    type="Server_Cert"
+    local requirement="Intermediate_CA"
+    local type="Server_Cert"
 
     echo "WARNING! THIS IS CURRENTLY JUST A QUICK EDIT OF ANOTHER FUNCTION AND WILL NOT BE ABLE TO PRODUCE MULTIPLE CERTS! You can use it by creating one cert at a time and copying the relevant files somewhere else before creating the next one."
 
@@ -189,8 +185,6 @@ create_server_cert () {
             eval "create_${requirement}"
         fi
 
-        requirement="Intermediate_CA"
-        type="Server_Cert"
         echo "Now commencing the creation of your ${type}"
 
         make_subdirectories $type

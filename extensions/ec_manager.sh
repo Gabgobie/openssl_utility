@@ -33,9 +33,14 @@ make_subdirectories () {
 
 }
 
+choose_CA () {
+    local type=$1
+    directory="${TLD}_${algorithm}/${TLD}_${type}/certs/"
+}
+
 create_Root_CA () {
 
-    type="Root_CA"
+    local type="Root_CA"
 
     if [ ! -d ${TLD}_${algorithm}/${TLD}_${type} ]; then
         echo "Creating directory for your ${type}"
@@ -80,8 +85,8 @@ create_Root_CA () {
 
 create_Interoot_CA () {
 
-    requirement="Root_CA"
-    type="Interoot_CA"
+    local requirement="Root_CA"
+    local type="Interoot_CA"
 
     if [ ! -d ${TLD}_${algorithm}/${TLD}_${type} ]; then
         echo "Creating directory for your ${type}"
@@ -92,8 +97,6 @@ create_Interoot_CA () {
             eval "create_${requirement}"
         fi
 
-        requirement="Root_CA"
-        type="Interoot_CA"
         echo "Now commencing the creation of your ${type}"
     fi
 
@@ -130,8 +133,8 @@ create_Interoot_CA () {
 
 create_Intermediate_CA () {
 
-    requirement="Interoot_CA"
-    type="Intermediate_CA"
+    local requirement="Interoot_CA"
+    local type="Intermediate_CA"
 
     if [ ! -d ${TLD}_${algorithm}/${TLD}_${type} ]; then
         echo "Creating directory for your ${type}"
@@ -142,8 +145,6 @@ create_Intermediate_CA () {
             eval "create_${requirement}"
         fi
 
-        requirement="Interoot_CA"
-        type="Intermediate_CA"
         echo "Now commencing the creation of your ${type}"
     fi
 
@@ -180,8 +181,8 @@ create_Intermediate_CA () {
 
 create_server_cert () {
 
-    requirement="Intermediate_CA"
-    type="Server_Cert"
+    local requirement="Intermediate_CA"
+    local type="Server_Cert"
 
     if [ ! -d ${TLD}_${algorithm}/${TLD}_${type} ]; then
         echo "Creating directory for your ${type}"
@@ -192,8 +193,6 @@ create_server_cert () {
             eval "create_${requirement}"
         fi
 
-        requirement="Intermediate_CA"
-        type="Server_Cert"
         echo "Now commencing the creation of your ${type}"
     fi
 
