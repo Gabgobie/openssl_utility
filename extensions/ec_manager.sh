@@ -33,9 +33,21 @@ make_subdirectories () {
 
 }
 
-choose_CA () {
+choose_CA () { # I think I will change the folder structure slightly so the certs will be in a subfolder of certs/ that's naming is referencing the CA that signed them. Not sure about that though.
     local type=$1
-    directory="${TLD}_${algorithm}/${TLD}_${type}/certs/"
+    local directory="${TLD}_${algorithm}/${TLD}_${type}/certs/"
+
+    local discovered_CAs=( $(ls $directory) )
+
+    echo "These CAs were located and can be chosen by typing in the corresponding number:"
+
+    for i in ${!discovered_CAs[@]}; do
+        echo $((i+1)). ${discovered_CAs[${i}]}
+    done
+
+    read -p "Enter a valid number: " number
+
+    echo $directory/${discovered_CAs[$((number-1))]}
 }
 
 create_Root_CA () {
