@@ -33,11 +33,6 @@ make_subdirectories () {
 
 }
 
-choose_CA () {
-    local type=$1
-    directory="${TLD}_${algorithm}/${TLD}_${type}/certs/"
-}
-
 create_Root_CA () {
 
     local type="Root_CA"
