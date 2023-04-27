@@ -34,20 +34,45 @@ make_subdirectories () {
 }
 
 choose_CA () { # I think I will change the folder structure slightly so the certs will be in a subfolder of certs/ that's naming is referencing the CA that signed them. Not sure about that though.
+
     local type=$1
     local directory="${TLD}_${algorithm}/${TLD}_${type}/certs/"
 
-    local discovered_CAs=( $(ls $directory) )
+    if [ -d "$directory" ]; then
+        local discovered_CAs=( $(ls ${directory}) )
+    else
+        local discovered_CAs=()
+    fi
 
-    echo "These CAs were located and can be chosen by typing in the corresponding number:"
+    if [ "${#discovered_CAs[@]}" = "0" ]; then
 
-    for i in ${!discovered_CAs[@]}; do
-        echo $((i+1)). ${discovered_CAs[${i}]}
-    done
+        echo "No CAs found. Creating a new one."
 
-    read -p "Enter a valid number: " number
+        create_${type}
 
-    echo $directory/${discovered_CAs[$((number-1))]}
+        local discovered_CAs=( $(ls ${directory}) )
+
+        export chosen_CA=${discovered_CAs[0]}
+    
+    elif [ "${#discovered_CAs[@]}" = "1" ]; then
+
+        echo "Choosing the only available CA for signing."
+
+        export chosen_CA=${discovered_CAs[0]}
+    
+    else
+
+        echo "These CAs were located and can be chosen by typing in the corresponding number:"
+
+        for i in ${!discovered_CAs[@]}; do
+            echo $((i+1)). ${discovered_CAs[${i}]}
+        done
+    
+        read -p "Enter a valid number: " number
+
+        export chosen_CA=${discovered_CAs[$((number-1))]}
+
+    fi
 }
 
 create_Root_CA () {
@@ -65,6 +90,9 @@ create_Root_CA () {
     make_subdirectories $type
 
     export exported_CN="${TLD} Root CA"
+    export CA_key="private/${TLD}_${type}_${algorithm}.key.pem"
+    export CA_cert="certs/${TLD}_${type}_${algorithm}.cert.pem"
+    export CA_crl="crl/${TLD}_${type}_${algorithm}.crl.pem"
 
     # Generating encrypted EC privatekey, secure it
     openssl ecparam -name ${algorithm} -genkey -out ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}.key.pem
@@ -103,37 +131,38 @@ create_Interoot_CA () {
     if [ ! -d ${TLD}_${algorithm}/${TLD}_${type} ]; then
         echo "Creating directory for your ${type}"
         mkdir ${TLD}_${algorithm}/${TLD}_${type}
-
-        if [ ! -e ${TLD}_${algorithm}/${TLD}_${requirement}/certs/${TLD}_${requirement}_${algorithm}.cert.pem ]; then
-            echo "You will need to create a ${requirement} first! Starting creation..."
-            eval "create_${requirement}"
-        fi
-
-        echo "Now commencing the creation of your ${type}"
+        make_subdirectories $type
     fi
 
-    make_subdirectories $type
+    choose_CA ${requirement}
+    export CA_key=${chosen_CA/%.cert.pem/.key.pem}
+    export CA_cert=${chosen_CA/%.cert.pem/.cert.pem}
+    export CA_crl=${chosen_CA/%.cert.pem/.crl.pem}
+
+    echo "Now commencing the creation of your ${type}"
+
     export exported_CN="${TLD} Interoot CA"
+    local serial=$(cat "${TLD}_${algorithm}/${TLD}_${requirement}/serial")
 
     # Generating encrypted EC privatekey, secure it
-    openssl ecparam -name ${algorithm} -genkey -out ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}.key.pem
-    openssl ec -in ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}.key.pem -aes256 -out ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}.key.pem
-    chmod 400 ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}.key.pem
+    openssl ecparam -name ${algorithm} -genkey -out ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem
+    openssl ec -in ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem -aes256 -out ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem
+    chmod 400 ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem
 
     # generate the corresponding csr
-    openssl req -config values/EC_values.cnf -new -extensions v3_${type} -key ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}.key.pem -out ${TLD}_${algorithm}/${TLD}_${type}/csr/${TLD}_${type}_${algorithm}.csr.pem
+    openssl req -config values/EC_values.cnf -new -extensions v3_${type} -key ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem -out ${TLD}_${algorithm}/${TLD}_${type}/csr/${TLD}_${type}_${algorithm}_${serial}.csr.pem
 
     # sign the csr
-    openssl ca -config values/EC_values.cnf -name ${requirement} -in ${TLD}_${algorithm}/${TLD}_${type}/csr/${TLD}_${type}_${algorithm}.csr.pem -out ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}.cert.pem
+    openssl ca -config values/EC_values.cnf -name ${requirement} -in ${TLD}_${algorithm}/${TLD}_${type}/csr/${TLD}_${type}_${algorithm}_${serial}.csr.pem -out ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}_${serial}.cert.pem
 
     # secure and incpect
-    chmod 400 ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}.cert.pem
+    chmod 400 ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}_${serial}.cert.pem
 
     read -p "Do you want to inspect your certificate to make sure everything is as expected? (Y/n) " -r input
     if [ "${input,,}" = "n" ]; then
         echo "Skipping inspection..."
     else
-        openssl x509 -in ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}.cert.pem -text -noout
+        openssl x509 -in ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}_${serial}.cert.pem -text -noout
     fi
 
     # confirmation
@@ -151,37 +180,38 @@ create_Intermediate_CA () {
     if [ ! -d ${TLD}_${algorithm}/${TLD}_${type} ]; then
         echo "Creating directory for your ${type}"
         mkdir ${TLD}_${algorithm}/${TLD}_${type}
-
-        if [ ! -e ${TLD}_${algorithm}/${TLD}_${requirement}/certs/${TLD}_${requirement}_${algorithm}.cert.pem ]; then
-            echo "You will need to create a ${requirement} first! Starting creation..."
-            eval "create_${requirement}"
-        fi
-
-        echo "Now commencing the creation of your ${type}"
+        make_subdirectories $type
     fi
 
-    make_subdirectories $type
-    export exported_CN="${TLD} Interoot CA"
+    choose_CA ${requirement}
+    export CA_key=${chosen_CA/%.cert.pem/.key.pem}
+    export CA_cert=${chosen_CA/%.cert.pem/.cert.pem}
+    export CA_crl=${chosen_CA/%.cert.pem/.crl.pem}
+
+    echo "Now commencing the creation of your ${type}"
+
+    export exported_CN="${TLD} Intermediate CA"
+    local serial=$(cat "${TLD}_${algorithm}/${TLD}_${requirement}/serial")
 
     # Generating encrypted EC privatekey, secure it
-    openssl ecparam -name ${algorithm} -genkey -out ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}.key.pem
-    openssl ec -in ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}.key.pem -aes256 -out ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}.key.pem
-    chmod 400 ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}.key.pem
+    openssl ecparam -name ${algorithm} -genkey -out ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem
+    openssl ec -in ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem -aes256 -out ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem
+    chmod 400 ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem
 
     # generate the corresponding csr
-    openssl req -config values/EC_values.cnf -new -extensions v3_${type} -key ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}.key.pem -out ${TLD}_${algorithm}/${TLD}_${type}/csr/${TLD}_${type}_${algorithm}.csr.pem
+    openssl req -config values/EC_values.cnf -new -extensions v3_${type} -key ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem -out ${TLD}_${algorithm}/${TLD}_${type}/csr/${TLD}_${type}_${algorithm}_${serial}.csr.pem
 
     # sign the csr
-    openssl ca -config values/EC_values.cnf -name ${requirement} -in ${TLD}_${algorithm}/${TLD}_${type}/csr/${TLD}_${type}_${algorithm}.csr.pem -out ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}.cert.pem
+    openssl ca -config values/EC_values.cnf -name ${requirement} -in ${TLD}_${algorithm}/${TLD}_${type}/csr/${TLD}_${type}_${algorithm}_${serial}.csr.pem -out ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}_${serial}.cert.pem
 
     # secure and incpect
-    chmod 400 ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}.cert.pem
+    chmod 400 ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}_${serial}.cert.pem
 
     read -p "Do you want to inspect your certificate to make sure everything is as expected? (Y/n) " -r input
     if [ "${input,,}" = "n" ]; then
         echo "Skipping inspection..."
     else
-        openssl x509 -in ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}.cert.pem -text -noout
+        openssl x509 -in ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}_${serial}.cert.pem -text -noout
     fi
 
     # confirmation
@@ -199,37 +229,38 @@ create_server_cert () {
     if [ ! -d ${TLD}_${algorithm}/${TLD}_${type} ]; then
         echo "Creating directory for your ${type}"
         mkdir ${TLD}_${algorithm}/${TLD}_${type}
-
-        if [ ! -e ${TLD}_${algorithm}/${TLD}_${requirement}/certs/${TLD}_${requirement}_${algorithm}.cert.pem ]; then
-            echo "You will need to create a ${requirement} first! Starting creation..."
-            eval "create_${requirement}"
-        fi
-
-        echo "Now commencing the creation of your ${type}"
+        make_subdirectories $type
     fi
 
-    make_subdirectories $type
-    export exported_CN="${TLD} Interoot CA"
+    choose_CA ${requirement}
+    export CA_key=${chosen_CA/%.cert.pem/.key.pem}
+    export CA_cert=${chosen_CA/%.cert.pem/.cert.pem}
+    export CA_crl=${chosen_CA/%.cert.pem/.crl.pem}
+
+    echo "Now commencing the creation of your ${type}"
+
+    export exported_CN="${TLD} Leaf Cert"
+    local serial=$(cat "${TLD}_${algorithm}/${TLD}_${requirement}/serial")
 
     # Generating encrypted EC privatekey, secure it
-    openssl ecparam -name ${algorithm} -genkey -out ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}.key.pem
-    openssl ec -in ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}.key.pem -aes256 -out ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}.key.pem
-    chmod 400 ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}.key.pem
+    openssl ecparam -name ${algorithm} -genkey -out ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem
+    openssl ec -in ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem -aes256 -out ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem
+    chmod 400 ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem
 
     # generate the corresponding csr
-    openssl req -config values/EC_values.cnf -new -key ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}.key.pem -out ${TLD}_${algorithm}/${TLD}_${type}/csr/${TLD}_${type}_${algorithm}.csr.pem
+    openssl req -config values/EC_values.cnf -new -extensions v3_${type} -key ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem -out ${TLD}_${algorithm}/${TLD}_${type}/csr/${TLD}_${type}_${algorithm}_${serial}.csr.pem
 
     # sign the csr
-    openssl ca -config values/EC_values.cnf -name ${requirement} -in ${TLD}_${algorithm}/${TLD}_${type}/csr/${TLD}_${type}_${algorithm}.csr.pem -out ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}.cert.pem
+    openssl ca -config values/EC_values.cnf -name ${requirement} -in ${TLD}_${algorithm}/${TLD}_${type}/csr/${TLD}_${type}_${algorithm}_${serial}.csr.pem -out ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}_${serial}.cert.pem
 
     # secure and incpect
-    chmod 400 ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}.cert.pem
+    chmod 400 ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}_${serial}.cert.pem
 
     read -p "Do you want to inspect your certificate to make sure everything is as expected? (Y/n) " -r input
     if [ "${input,,}" = "n" ]; then
         echo "Skipping inspection..."
     else
-        openssl x509 -in ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}.cert.pem -text -noout
+        openssl x509 -in ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}_${serial}.cert.pem -text -noout
     fi
 
     # confirmation

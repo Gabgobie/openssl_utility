@@ -30,9 +30,9 @@ crlnumber         = $dir/crlnumber
 default_crl_days  = $interoot_days
 default_days      = $interoot_days
 
-private_key       = $dir/private/${TLD}_Root_CA_${algorithm}.key.pem
-certificate       = $dir/certs/${TLD}_Root_CA_${algorithm}.cert.pem
-crl               = $dir/crl/${TLD}_Root_CA_${algorithm}.crl.pem
+private_key       = $dir/private/$ENV::CA_key
+certificate       = $dir/certs/$ENV::CA_cert
+crl               = $dir/crl/$ENV::CA_crl
 
 # For certificate revocation lists.
 crl_extensions    = crl_ext
@@ -63,9 +63,9 @@ crlnumber         = $dir/crlnumber
 default_crl_days  = $intermediate_days
 default_days      = $intermediate_days
 
-private_key       = $dir/private/${TLD}_Interoot_CA_${algorithm}.key.pem
-certificate       = $dir/certs/${TLD}_Interoot_CA_${algorithm}.cert.pem
-crl               = $dir/crl/${TLD}_Interoot_CA_${algorithm}.crl.pem
+private_key       = $dir/private/$ENV::CA_key
+certificate       = $dir/certs/$ENV::CA_cert
+crl               = $dir/crl/$ENV::CA_crl
 
 # For certificate revocation lists.
 crl_extensions    = crl_ext
@@ -96,9 +96,9 @@ crlnumber         = $dir/crlnumber
 default_crl_days  = $leaf_days
 default_days      = $leaf_days
 
-private_key       = $dir/private/${TLD}_Intermediate_CA_${algorithm}.key.pem
-certificate       = $dir/certs/${TLD}_Intermediate_CA_${algorithm}.cert.pem
-crl               = $dir/crl/${TLD}_Intermediate_CA_${algorithm}.crl.pem
+private_key       = $dir/private/$ENV::CA_key
+certificate       = $dir/certs/$ENV::CA_cert
+crl               = $dir/crl/$ENV::CA_crl
 
 # For certificate revocation lists.
 crl_extensions    = crl_ext
