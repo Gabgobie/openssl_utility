@@ -93,6 +93,7 @@ create_Root_CA () {
     export CA_key="private/${TLD}_${type}_${algorithm}.key.pem"
     export CA_cert="certs/${TLD}_${type}_${algorithm}.cert.pem"
     export CA_crl="crl/${TLD}_${type}_${algorithm}.crl.pem"
+    export serial=""
 
     # Generating encrypted EC privatekey, secure it
     openssl ecparam -name ${algorithm} -genkey -out ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}.key.pem
@@ -142,7 +143,7 @@ create_Interoot_CA () {
     echo "Now commencing the creation of your ${type}"
 
     export exported_CN="${TLD} Interoot CA"
-    local serial=$(cat "${TLD}_${algorithm}/${TLD}_${requirement}/serial")
+    export serial=$(cat "${TLD}_${algorithm}/${TLD}_${requirement}/serial")
 
     # Generating encrypted EC privatekey, secure it
     openssl ecparam -name ${algorithm} -genkey -out ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem
@@ -191,7 +192,7 @@ create_Intermediate_CA () {
     echo "Now commencing the creation of your ${type}"
 
     export exported_CN="${TLD} Intermediate CA"
-    local serial=$(cat "${TLD}_${algorithm}/${TLD}_${requirement}/serial")
+    export serial=$(cat "${TLD}_${algorithm}/${TLD}_${requirement}/serial")
 
     # Generating encrypted EC privatekey, secure it
     openssl ecparam -name ${algorithm} -genkey -out ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem
@@ -240,7 +241,7 @@ create_server_cert () {
     echo "Now commencing the creation of your ${type}"
 
     export exported_CN="${TLD} Leaf Cert"
-    local serial=$(cat "${TLD}_${algorithm}/${TLD}_${requirement}/serial")
+    export serial=$(cat "${TLD}_${algorithm}/${TLD}_${requirement}/serial")
 
     # Generating encrypted EC privatekey, secure it
     openssl ecparam -name ${algorithm} -genkey -out ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem
@@ -248,7 +249,7 @@ create_server_cert () {
     chmod 400 ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem
 
     # generate the corresponding csr
-    openssl req -config values/EC_values.cnf -new -extensions v3_${type} -key ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem -out ${TLD}_${algorithm}/${TLD}_${type}/csr/${TLD}_${type}_${algorithm}_${serial}.csr.pem
+    openssl req -config values/EC_values.cnf -new -key ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}_${serial}.key.pem -out ${TLD}_${algorithm}/${TLD}_${type}/csr/${TLD}_${type}_${algorithm}_${serial}.csr.pem
 
     # sign the csr
     openssl ca -config values/EC_values.cnf -name ${requirement} -in ${TLD}_${algorithm}/${TLD}_${type}/csr/${TLD}_${type}_${algorithm}_${serial}.csr.pem -out ${TLD}_${algorithm}/${TLD}_${type}/certs/${TLD}_${type}_${algorithm}_${serial}.cert.pem

@@ -164,7 +164,7 @@ stateOrProvinceName_default     =
 localityName_default            = 
 0.organizationName_default      = 
 organizationalUnitName_default  = 
-commonName_default              = $ENV::exported_CN $algorithm
+commonName_default              = $ENV::exported_CN $algorithm $ENV::serial
 emailAddress_default            = certmaster@${TLD}
 
 [ v3_Root_CA ]
