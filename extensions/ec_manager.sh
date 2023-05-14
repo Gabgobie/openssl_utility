@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# setting dummy values for openssl
+types=( "Root_CA" "Interoot_CA" "Intermediate_CA" )
+for type in "${types[@]}"; do
+    key="${type}_key"
+    cert="${type}_cert"
+    crl="${type}_crl"
+
+    declare -g -x $key="$type N/A"
+    declare -g -x $cert="$type N/A"
+    declare -g -x $crl="$type N/A"
+done
+
 read -p "Please make sure you set all of the variables inside values/EC_values.cnf to your liking and press enter to continue."
 
 # Variables
@@ -52,13 +64,13 @@ choose_CA () { # I think I will change the folder structure slightly so the cert
 
         local discovered_CAs=( $(ls ${directory}) )
 
-        export chosen_CA=${discovered_CAs[0]}
+        local chosen_CA=${discovered_CAs[0]}
     
     elif [ "${#discovered_CAs[@]}" = "1" ]; then
 
         echo "Choosing the only available CA for signing."
 
-        export chosen_CA=${discovered_CAs[0]}
+        local chosen_CA=${discovered_CAs[0]}
     
     else
 
@@ -70,9 +82,19 @@ choose_CA () { # I think I will change the folder structure slightly so the cert
     
         read -p "Enter a valid number: " number
 
-        export chosen_CA=${discovered_CAs[$((number-1))]}
+        local chosen_CA=${discovered_CAs[$((number-1))]}
 
     fi
+
+    key="${type}_key"
+    cert="${type}_cert"
+    crl="${type}_crl"
+
+    declare -g -x $key=${chosen_CA/%.cert.pem/.key.pem}
+    declare -g -x $cert=${chosen_CA/%.cert.pem/.cert.pem}
+    declare -g -x $crl=${chosen_CA/%.cert.pem/.crl.pem}
+
+    echo "Chosen_CA is $chosen_CA"
 }
 
 create_Root_CA () {
@@ -89,11 +111,11 @@ create_Root_CA () {
 
     make_subdirectories $type
 
-    export exported_CN="${TLD} Root CA"
-    export CA_key="private/${TLD}_${type}_${algorithm}.key.pem"
-    export CA_cert="certs/${TLD}_${type}_${algorithm}.cert.pem"
-    export CA_crl="crl/${TLD}_${type}_${algorithm}.crl.pem"
-    export serial=""
+    declare -g -x exported_CN="${TLD} Root CA"
+    declare -g -x Root_CA_key="${TLD}_${type}_${algorithm}.key.pem"
+    declare -g -x Root_CA_cert="${TLD}_${type}_${algorithm}.cert.pem"
+    declare -g -x Root_CA_crl="${TLD}_${type}_${algorithm}.crl.pem"
+    declare -g -x serial=""
 
     # Generating encrypted EC privatekey, secure it
     openssl ecparam -name ${algorithm} -genkey -out ${TLD}_${algorithm}/${TLD}_${type}/private/${TLD}_${type}_${algorithm}.key.pem
@@ -136,9 +158,6 @@ create_Interoot_CA () {
     fi
 
     choose_CA ${requirement}
-    export CA_key=${chosen_CA/%.cert.pem/.key.pem}
-    export CA_cert=${chosen_CA/%.cert.pem/.cert.pem}
-    export CA_crl=${chosen_CA/%.cert.pem/.crl.pem}
 
     echo "Now commencing the creation of your ${type}"
 
@@ -185,9 +204,6 @@ create_Intermediate_CA () {
     fi
 
     choose_CA ${requirement}
-    export CA_key=${chosen_CA/%.cert.pem/.key.pem}
-    export CA_cert=${chosen_CA/%.cert.pem/.cert.pem}
-    export CA_crl=${chosen_CA/%.cert.pem/.crl.pem}
 
     echo "Now commencing the creation of your ${type}"
 
@@ -234,9 +250,6 @@ create_server_cert () {
     fi
 
     choose_CA ${requirement}
-    export CA_key=${chosen_CA/%.cert.pem/.key.pem}
-    export CA_cert=${chosen_CA/%.cert.pem/.cert.pem}
-    export CA_crl=${chosen_CA/%.cert.pem/.crl.pem}
 
     echo "Now commencing the creation of your ${type}"
 

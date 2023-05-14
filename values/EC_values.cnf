@@ -17,7 +17,7 @@ default_ca = Intermediate_CA
 
 
 [ Root_CA ]
-# Directory and file locations. This one is used to sign leaf certs.
+# Directory and file locations. This one is used to sign Interoot CA certs.
 dir               = ./${TLD}_${algorithm}/${TLD}_Root_CA
 certs             = $dir/certs
 crl_dir           = $dir/crl
@@ -30,9 +30,9 @@ crlnumber         = $dir/crlnumber
 default_crl_days  = $interoot_days
 default_days      = $interoot_days
 
-private_key       = $dir/private/$ENV::CA_key
-certificate       = $dir/certs/$ENV::CA_cert
-crl               = $dir/crl/$ENV::CA_crl
+private_key       = $dir/private/$ENV::Root_CA_key
+certificate       = $dir/certs/$ENV::Root_CA_cert
+crl               = $dir/crl/$ENV::Root_CA_crl
 
 # For certificate revocation lists.
 crl_extensions    = crl_ext
@@ -50,7 +50,7 @@ copy_extensions   = none
 x509_extensions   = v3_Root_CA
 
 [ Interoot_CA ]
-# Directory and file locations. This one is used to sign intermediate ca certs.
+# Directory and file locations. This one is used to sign Intermediate CA certs.
 dir               = ./${TLD}_${algorithm}/${TLD}_Interoot_CA
 certs             = $dir/certs
 crl_dir           = $dir/crl
@@ -63,9 +63,9 @@ crlnumber         = $dir/crlnumber
 default_crl_days  = $intermediate_days
 default_days      = $intermediate_days
 
-private_key       = $dir/private/$ENV::CA_key
-certificate       = $dir/certs/$ENV::CA_cert
-crl               = $dir/crl/$ENV::CA_crl
+private_key       = $dir/private/$ENV::Interoot_CA_key
+certificate       = $dir/certs/$ENV::Interoot_CA_cert
+crl               = $dir/crl/$ENV::Interoot_CA_crl
 
 # For certificate revocation lists.
 crl_extensions    = crl_ext
@@ -96,9 +96,9 @@ crlnumber         = $dir/crlnumber
 default_crl_days  = $leaf_days
 default_days      = $leaf_days
 
-private_key       = $dir/private/$ENV::CA_key
-certificate       = $dir/certs/$ENV::CA_cert
-crl               = $dir/crl/$ENV::CA_crl
+private_key       = $dir/private/$ENV::Intermediate_CA_key
+certificate       = $dir/certs/$ENV::Intermediate_CA_cert
+crl               = $dir/crl/$ENV::Intermediate_CA_crl
 
 # For certificate revocation lists.
 crl_extensions    = crl_ext
