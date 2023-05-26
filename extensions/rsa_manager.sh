@@ -1,9 +1,21 @@
 #!/bin/bash
 
-read -p "Please make sure you set all of the variables inside values/RSA_values.cnf to your liking and press enter to continue."
+# setting dummy values for openssl
+types=( "Root_CA" "Interoot_CA" "Intermediate_CA" )
+for type in "${types[@]}"; do
+    key="${type}_key"
+    cert="${type}_cert"
+    crl="${type}_crl"
+
+    declare -g -x $key="$type N/A"
+    declare -g -x $cert="$type N/A"
+    declare -g -x $crl="$type N/A"
+done
+
+read -p "Please make sure you set all of the variables inside values/openssl.cnf to your liking and press enter to continue."
 
 # Variables
-eval $(awk -F' *= *' '$1 == "TLD" || $1 == "bits" || $1 == "root_days" || $1 == "interoot_days" || $1 == "intermediate_days" || $1 == "algorithm" {print $1 "=" $2}' values/RSA_values.cnf)
+eval $(awk -F' *= *' '$1 == "TLD" || $1 == "bits" || $1 == "root_days" || $1 == "interoot_days" || $1 == "intermediate_days" || $1 == "algorithm" {print $1 "=" $2}' values/openssl.cnf)
 
 # script running
 if [ ! -d ${TLD}_${algorithm} ]; then

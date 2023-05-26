@@ -1,6 +1,6 @@
 #!/bin/bash
 
-eval $(awk -F' *= *' '$1 == "TLD" {print $1 "=" $2}' values/RSA_values.cnf)
+eval $(awk -F' *= *' '$1 == "TLD" {print $1 "=" $2}' values/openssl.cnf)
 
 read -p "Are you sure you want to delete ${TLD}_* in this directory? This action can not be undone! If so please type in 'YES': " input
 

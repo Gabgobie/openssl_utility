@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Variables
-eval $(awk -F' *= *' '$1 == "TLD" {print $1 "=" $2}' values/RSA_values.cnf)
+eval $(awk -F' *= *' '$1 == "TLD" {print $1 "=" $2}' values/openssl.cnf)
 filename="${TLD}_Root_CA_Collection"
 
 # File to collect certs in

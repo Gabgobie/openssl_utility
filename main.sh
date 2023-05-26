@@ -22,6 +22,10 @@ else
 fi
 
 # gathering facts
+
+#working dir:
+working_dir=$( pwd )
+
 echo "Loading modules..."
 modules=( $(ls extensions) )
 
