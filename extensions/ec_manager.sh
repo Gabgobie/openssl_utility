@@ -18,13 +18,15 @@ read -p "Please make sure you set all of the variables inside values/openssl.cnf
 
 echo "These algorithms are available and can be chosen by typing in the corresponding number:"
 available_algorithms=( "secp521r1" "prime256v1" "brainpoolP512r1" ) # you can add any cypher you want to use from "openssl ecparam -list_curves" in this array
+default_choice_index=2
+
 for i in ${!available_algorithms[@]}; do
     echo $((i+1)). ${available_algorithms[${i}]}
 done
 
-read -p "Enter a valid number (brainpoolP512r1 is standard): " number
+read -p "Enter a valid number: [${available_algorithms[${default_choice_index}]}]" number
 if [[ $number = "" ]]; then
-    declare -g -x algorithm=${available_algorithms[2]} # you can choose a default value here, bash uses 0-based indexing
+    declare -g -x algorithm=${available_algorithms[${default_choice_index}]} # you can choose a default value here, bash uses 0-based indexing
 else
     declare -g -x algorithm=${available_algorithms[$((number-1))]}
 fi
@@ -48,12 +50,15 @@ make_subdirectories () {
     mkdir ${dir}/crl
     mkdir ${dir}/newcerts
     mkdir ${dir}/private
-    mkdir ${dir}/children
     touch ${dir}/index.txt
     echo "1000" > ${dir}/serial
     echo "1000" > ${dir}/crlnumber
     openssl rand -out ${dir}/private/.rand $bits
     chmod 400 ${dir}/private/.rand
+
+    if [ ! "$type" = "Server_Cert" ]; then
+        mkdir ${dir}/children
+    fi
 
     if [ ! "$type" = "Root_CA" ]; then
         mkdir ${dir}/csr
@@ -127,7 +132,7 @@ create_Root_CA () {
 
     make_subdirectories $type
 
-    declare -g -x exported_CN="${Domain} Root CA"
+    declare -g -x exported_CN="${Domain} Root CA ${algorithm}"
     declare -g -x Root_CA_key="${Domain}_${type}_${algorithm}.key.pem"
     declare -g -x Root_CA_cert="${Domain}_${type}_${algorithm}.cert.pem"
     declare -g -x Root_CA_crl="${Domain}_${type}_${algorithm}.crl.pem"
@@ -177,8 +182,8 @@ create_Interoot_CA () {
 
     echo "Now commencing the creation of your ${type}"
 
-    export exported_CN="${Domain} Interoot CA"
     export serial=$(cat "${Domain}_${algorithm}/${Domain}_${requirement}/serial")
+    export exported_CN="${Domain} Interoot CA ${algorithm} ${serial}"
 
     # Generating encrypted EC privatekey, secure it
     openssl ecparam -name ${algorithm} -genkey -out ${Domain}_${algorithm}/${Domain}_${type}/private/${Domain}_${type}_${algorithm}_${serial}.key.pem
@@ -223,8 +228,8 @@ create_Intermediate_CA () {
 
     echo "Now commencing the creation of your ${type}"
 
-    export exported_CN="${Domain} Intermediate CA"
     export serial=$(cat "${Domain}_${algorithm}/${Domain}_${requirement}/serial")
+    export exported_CN="${Domain} Intermediate CA ${algorithm} ${serial}"
 
     # Generating encrypted EC privatekey, secure it
     openssl ecparam -name ${algorithm} -genkey -out ${Domain}_${algorithm}/${Domain}_${type}/private/${Domain}_${type}_${algorithm}_${serial}.key.pem
@@ -271,8 +276,8 @@ create_server_cert () {
 
     echo "Now commencing the creation of your ${type}"
 
-    export exported_CN="${Domain} Leaf Cert"
     export serial=$(cat "${Domain}_${algorithm}/${Domain}_${requirement}/serial")
+    export exported_CN="${Domain} Leaf Cert ${algorithm} ${serial}"
 
     # Generating encrypted EC privatekey, secure it
     openssl ecparam -name ${algorithm} -genkey -out ${Domain}_${algorithm}/${Domain}_${type}/private/${Domain}_${type}_${algorithm}_${serial}.key.pem

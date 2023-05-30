@@ -164,8 +164,8 @@ stateOrProvinceName_default     =
 localityName_default            = 
 0.organizationName_default      = 
 organizationalUnitName_default  = 
-commonName_default              = $ENV::exported_CN $cypher $ENV::serial
-emailAddress_default            = certmaster@${Domain}
+commonName_default              = $ENV::exported_CN
+emailAddress_default            = certmaster@mail.${Domain}
 
 [ v3_Root_CA ]
 # Erweiterungen für eine Root-CA
