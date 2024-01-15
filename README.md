@@ -2,11 +2,11 @@
 Just a little CLI utility I made for myself to make certifiacte management a little easier.
 
 
-This is my first project and the first time I code in Bash. I'd appreciate a little patience for the mistakes/suboptimal implementations in this project. Any recommendations are appreciated. I decided on using bash to avoid having to install any additional runtime environemnts on my system.
+This is my first project and the first time I code in Bash. I'd appreciate a little patience for the mistakes/suboptimal implementations in this project. Any recommendations are appreciated. I decided on using Bash to avoid having to install any additional runtime environemnts on my system.
 
 ## Dependencies
 
-At this moment the project is dependant on:
+At this moment the project is dependent on:
 - dpkg
 - apt
 - awk (gawk but I believe mawk should work as well?)
