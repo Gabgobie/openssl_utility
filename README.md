@@ -20,4 +20,4 @@ You can put your own bash scripts into the extensions folder and they should be 
 
 ## Is the project maintained?
 
-Due to time constraints I will likely not spend a lot of time with this project after it has fulfilled its purpose but I will ofc look into any PRs and Issues every once in a while. Sometimes there may however be an unexpected update whenever I find the time to add features I wished to have all along. In the unlikely case of some breaking change in openssl I will update this to work again as I intend on using this a couple times per year. After all it's just a script that's supposed to make handling openssl a little easier. I just felt like sharing this in case anybody actually had a use for it.
+I have started working on a Python reboot of this project. I don't expect it to stop working anytime soon but I will probably drop this version of the project for now. It should still be sufficient to initialize your PKI but I would probably not trust it to handle it after that (even though it probably could). Ensure you have a backup of your PKI when working with this. I will add a link to the reboot as soon as it is mature enough.
